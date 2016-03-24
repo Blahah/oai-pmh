@@ -1,9 +1,10 @@
 #! /usr/bin/env node
-'use strict';
+'use strict'
 
 const _ = require('lodash');
 const co = require('co');
 const program = require('commander');
+const camelCase = require('camelcase')
 
 const oaiPmhModule = require('../');
 const pkg = require('../package.json');
@@ -11,82 +12,37 @@ const pkg = require('../package.json');
 program
   .version(pkg.version);
 
-program
-  .command('list-identifiers [baseUrl]')
-  .option('-p, --metadata-prefix [prefix]')
-  .action((baseUrl, _options) => {
-    try {
-      co(function* _listIdentifiers() {
-        const options = _.pick(_options, 'metadataPrefix');
-        const oaiPmh = new oaiPmhModule.OaiPmh(baseUrl);
-        console.log('[');
-        let first = true;
-        for (const identifierPromise of oaiPmh.listIdentifiers(options)) {
-          const identifier = yield identifierPromise;
-          if (!first) {
-            console.log(',');
-          }
-          first = false;
-          console.log(JSON.stringify(identifier, undefined, 2));
-        }
-        console.log(']');
-      });
-    } catch (e) {
-      console.err(e);
-      process.exit(1);
-    }
-  });
+['identifiers', 'sets', 'records'].forEach(function(cmd) {
 
-program
-  .command('list-sets [baseUrl]')
-  .option('-p, --metadata-prefix [prefix]')
-  .action((baseUrl, _options) => {
-    try {
-      co(function* _listSets() {
-        const options = _.pick(_options, 'metadataPrefix');
-        const oaiPmh = new oaiPmhModule.OaiPmh(baseUrl);
-        console.log('[');
-        let first = true;
-        for (const setPromise of oaiPmh.listSets(options)) {
-          const set = yield setPromise;
-          if (!first) {
-            console.log(',');
-          }
-          first = false;
-          console.log(JSON.stringify(set, undefined, 2));
-        }
-        console.log(']');
-      });
-    } catch (e) {
-      console.err(e);
-      process.exit(1);
-    }
-  });
+  var camelcmd = camelCase('list-${cmd}')
 
-program
-  .command('list-records [baseUrl]')
-  .option('-p, --metadata-prefix [prefix]')
-  .action((baseUrl, _options) => {
-    try {
-      co(function* _listRecords() {
-        const options = _.pick(_options, 'metadataPrefix');
-        const oaiPmh = new oaiPmhModule.OaiPmh(baseUrl);
-        console.log('[');
-        let first = true;
-        for (const setPromise of oaiPmh.listRecords(options)) {
-          const set = yield recordPromise;
-          if (!first) {
-            console.log(',');
+  program
+    .command(`list-${cmd} [baseUrl]`)
+    .option('-p, --metadata-prefix [prefix]')
+    .action((baseUrl, _options) => {
+      try {
+        co(function* () {
+          const options = _.pick(_options, 'metadataPrefix');
+          const oaiPmh = new oaiPmhModule.OaiPmh(baseUrl);
+          console.log('[');
+          let first = true;
+          for (const identifierPromise of oaiPmh[camelcmd](options)) {
+            const result = yield cmdPromise;
+            if (!first) {
+              console.log(',');
+            }
+            first = false;
+            console.log(JSON.stringify(result, undefined, 2));
           }
-          first = false;
-          console.log(JSON.stringify(record, undefined, 2));
-        }
-        console.log(']');
-      });
-    } catch (e) {
-      console.err(e);
-      process.exit(1);
-    }
-  });
+          console.log(']');
+        });
+      } catch (e) {
+        console.err(e);
+        process.exit(1);
+      }
+    });
+
+})
+
 
 program.parse(process.argv);

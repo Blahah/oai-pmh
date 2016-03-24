@@ -37,4 +37,56 @@ program
     }
   });
 
+program
+  .command('list-sets [baseUrl]')
+  .option('-p, --metadata-prefix [prefix]')
+  .action((baseUrl, _options) => {
+    try {
+      co(function* _listSets() {
+        const options = _.pick(_options, 'metadataPrefix');
+        const oaiPmh = new oaiPmhModule.OaiPmh(baseUrl);
+        console.log('[');
+        let first = true;
+        for (const setPromise of oaiPmh.listSets(options)) {
+          const set = yield setPromise;
+          if (!first) {
+            console.log(',');
+          }
+          first = false;
+          console.log(JSON.stringify(set, undefined, 2));
+        }
+        console.log(']');
+      });
+    } catch (e) {
+      console.err(e);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('list-records [baseUrl]')
+  .option('-p, --metadata-prefix [prefix]')
+  .action((baseUrl, _options) => {
+    try {
+      co(function* _listRecords() {
+        const options = _.pick(_options, 'metadataPrefix');
+        const oaiPmh = new oaiPmhModule.OaiPmh(baseUrl);
+        console.log('[');
+        let first = true;
+        for (const setPromise of oaiPmh.listRecords(options)) {
+          const set = yield recordPromise;
+          if (!first) {
+            console.log(',');
+          }
+          first = false;
+          console.log(JSON.stringify(record, undefined, 2));
+        }
+        console.log(']');
+      });
+    } catch (e) {
+      console.err(e);
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);
